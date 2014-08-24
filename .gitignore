@@ -156,4 +156,4 @@ $RECYCLE.BIN/
 .DS_Store
 
 # Hidden Config Files
-HiddenSettings.config 
+/NQG.TheoryBox.Crawler/HiddenSettings.config

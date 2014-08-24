@@ -79,7 +79,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="HiddenSettings.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
