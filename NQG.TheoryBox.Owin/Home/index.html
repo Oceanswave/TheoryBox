@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <title>TheoryBox - Build your strategy like magic.</title>
+    @Model.head
+    @Model.styles
+    @Model.appStyles
+    <style>
+        [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+            display: none !important;
+        }
+    </style>
+</head>
+    <body ng-app="ngTheoryBox" data-ng-cloak="">
+        <div data-ui-view="navbar"></div>
+        <div data-ui-view="pageContent"></div>
+        @Model.components
+        @Model.app
+
+        <script type="text/ng-template" id="/NavBar">
+        @Partial['navbar.html']
+    </script>
+
+        <script type="text/ng-template" id="/Home">
+        @Partial['home.html']
+    </script>
+    </body>
+</html>

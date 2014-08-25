@@ -1,0 +1,48 @@
+﻿<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar">Why Barista</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" data-ui-sref="Home"><b>Theory</b>Box</a>
+        </div>
+        <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li><a data-ui-sref="CardsByColor({color: 'black'})">Black</a></li>
+                <li><a data-ui-sref="CardsByColor">Blue</a></li>
+                <li><a data-ui-sref="CardsByColor">Green</a></li>
+                <li><a data-ui-sref="CardsByColor">Red</a></li>
+                <li><a data-ui-sref="CardsByColor">White</a></li>
+                <!-- Profile links for extra small screens -->
+                <li class="visible-xs"><a data-ui-sref="SignIn">Sign In</a></li>
+                <li class="visible-xs"><a href="#">Sign Out</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right hidden-xs">
+                <li><a data-ui-sref="AboutUs">About Us</a></li>
+                <!-- Sign in & Sign up -->
+                <li id="sign-up" data-ng-if="!security.user"><a data-ui-sref="SignUp">Sign Up</a></li>
+                <li id="sign-in" data-ng-if="!security.user"><a data-ui-sref="SignIn">Sign In</a></li>
+                <!-- Signed in. Profile Menu -->
+                <li id="cogs-menu" class="hidden">
+                    <a href="edit-profile.html">
+                        <i class="fa fa-gears fa-lg"></i>
+                    </a>
+                </li>
+                <li data-ng-if="security.user" data-ng-cloak="">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{security.user.userName}}<b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li class="account">
+                            <div class="avatar"></div>
+                            <p><b>{{security.user.userName}}</b><br />{{security.user.email}}</p>
+                            <p><div class="btn btn-primary" data-ng-click="goHome()">Dashboard</div></p>
+                            <p><a data-ui-sref="ManageProfile">Profile</a> | <a data-ng-click="security.logout()" style="cursor: pointer;">Sign out</a></p>
+                            <div class="clearfix"></div>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

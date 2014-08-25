@@ -2,6 +2,7 @@
 {
     using Nancy;
     using Nancy.Bootstrapper;
+    using Nancy.Conventions;
     using Nancy.TinyIoc;
     using Newtonsoft.Json;
 
@@ -19,21 +20,21 @@
             }
         }
 
-        //protected override void ConfigureConventions(Nancy.Conventions.NancyConventions nancyConventions)
-        //{
+        protected override void ConfigureConventions(NancyConventions nancyConventions)
+        {
 
-        //  Conventions.StaticContentsConventions.Add(
-        //        StaticContentConventionBuilder.AddDirectory("BaristaFiddle/components")
-        //    );
+            Conventions.StaticContentsConventions.Add(
+                  StaticContentConventionBuilder.AddDirectory("components")
+              );
 
-        //  base.ConfigureConventions(nancyConventions);
-        //}
+            base.ConfigureConventions(nancyConventions);
+        }
 
         protected override void ApplicationStartup(TinyIoCContainer container, IPipelines pipelines)
         {
             base.ApplicationStartup(container, pipelines);
 
-            //BundleConfiguration.RegisterBundles();
+            BundleConfiguration.RegisterBundles();
         }
 
         protected override void ConfigureApplicationContainer(TinyIoCContainer container)
