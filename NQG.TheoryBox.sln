@@ -7,9 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NQG.TheoryBox.Common", "NQG
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NQG.TheoryBox.Owin", "NQG.TheoryBox.Owin\NQG.TheoryBox.Owin.csproj", "{00E56D8D-CED5-4B86-9A18-855C33887CB3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NQG.TheoryBox.Hosts.WindowsService", "NQG.TheoryBox.Hosts.WindowsService\NQG.TheoryBox.Hosts.WindowsService.csproj", "{4C9E5535-D08B-4184-847F-79DE838E4821}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NQG.TheoryBox.Host.WindowsService", "NQG.TheoryBox.Hosts.WindowsService\NQG.TheoryBox.Host.WindowsService.csproj", "{4C9E5535-D08B-4184-847F-79DE838E4821}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NQG.TheoryBox.Crawler", "NQG.TheoryBox.Crawler\NQG.TheoryBox.Crawler.csproj", "{A0711E09-74C1-443F-ABC8-3FC5E50F954A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Framework", "Framework", "{62D6151B-2402-47A5-BCFA-A73A3F2CA64E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,5 +38,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{156CF9E1-729D-4ECF-ACD5-8ECFC9CA4AFC} = {62D6151B-2402-47A5-BCFA-A73A3F2CA64E}
 	EndGlobalSection
 EndGlobal

@@ -40,20 +40,6 @@
             set;
         }
 
-        [JsonProperty("log")]
-        public CardLog Log
-        {
-            get;
-            set;
-        }
-
-        [JsonProperty("gathererUrl")]
-        public string GathererUrl
-        {
-            get;
-            set;
-        }
-
         [JsonProperty("firstSeen")]
         public DateTime? FirstSeen
         {

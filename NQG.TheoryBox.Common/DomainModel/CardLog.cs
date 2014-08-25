@@ -5,6 +5,18 @@
 
     public class CardLog
     {
+        public CardLog()
+        {
+            Errors = new List<string>();
+        }
+
+        [JsonProperty("id")]
+        public string MultiverseId
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("errors")]
         public IList<string> Errors
         {

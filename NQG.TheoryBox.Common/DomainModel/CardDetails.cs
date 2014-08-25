@@ -6,6 +6,12 @@
 
     public class CardDetails
     {
+        public CardDetails()
+        {
+            OtherSets = new List<CardDetailsOtherSet>();
+            Rulings = new List<CardDetailsRuling>();
+        }
+
         [JsonProperty("name")]
         public string Name
         {
@@ -35,7 +41,7 @@
         }
 
         [JsonProperty("convertedManaCost")]
-        public int? ConvertedManaCost
+        public decimal? ConvertedManaCost
         {
             get;
             set;
@@ -62,8 +68,43 @@
             set;
         }
 
+        [JsonProperty("pt")]
+        public CardPT PT
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("artist")]
         public string Artist
+        {
+            get;
+            set;
+        }
+
+        [JsonProperty("cardNumber")]
+        public string CardNumber
+        {
+            get;
+            set;
+        }
+
+        [JsonProperty("otherSets")]
+        public IList<CardDetailsOtherSet> OtherSets
+        {
+            get;
+            set;
+        }
+
+        [JsonProperty("rulings")]
+        public IList<CardDetailsRuling> Rulings
+        {
+            get;
+            set;
+        }
+
+        [JsonProperty("imageUrl")]
+        public string ImageUrl
         {
             get;
             set;

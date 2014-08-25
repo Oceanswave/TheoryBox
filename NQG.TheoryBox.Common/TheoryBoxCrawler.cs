@@ -1,16 +1,15 @@
-﻿namespace NQG.TheoryBox.Crawler
+﻿namespace NQG.TheoryBox
 {
-    using NQG.TheoryBox.DomainModel;
-    using NQG.TheoryBox.Extensions;
-    using OpenQA.Selenium.PhantomJS;
     using System;
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Configuration;
     using System.Globalization;
-    using System.Threading.Tasks;
+    using NQG.TheoryBox.DomainModel;
+    using NQG.TheoryBox.Extensions;
+    using OpenQA.Selenium.PhantomJS;
 
-    public class TheoryBoxCrawler
+    public sealed class TheoryBoxCrawler
     {
         public string UserAgent
         {
@@ -18,26 +17,14 @@
             set;
         }
 
-        public bool Start()
-        {
-            AsyncPump.Run(() => Initialize());
-            AsyncPump.Run(() => Crawl());
-            return true;
-        }
-
-        public bool Stop()
-        {
-            return true;
-        }
-
-        protected async void Initialize()
+        public async void Initialize()
         {
             UserAgent = ConfigurationManager.AppSettings["UserAgent"];
 
             //await Repository.DeleteCardCollectionAsync();
         }
 
-        protected async void Crawl()
+        public async void Crawl()
         {
             using (var phantomJsService = PhantomJSDriverService.CreateDefaultService())
             {
@@ -56,7 +43,7 @@
                     var cardInfos = GetAllCompactCardInfos(phantomJsDriverPool);
 
                     NonBlockingConsole.WriteLine("Retrieving card details for all cards...", ConsoleColor.Yellow);
-                    foreach(var cardInfo in cardInfos)
+                    foreach (var cardInfo in cardInfos)
                     {
                         var hasUpdates = false;
                         var card = await Repository.GetCard(cardInfo.MultiVerseId);
@@ -67,7 +54,6 @@
                             {
                                 MultiverseId = cardInfo.MultiVerseId,
                                 Details = { Name = cardInfo.Name },
-                                GathererUrl = cardInfo.AbsoluteUrl.ToString(),
                                 FirstSeen = DateTime.UtcNow
                             };
                             hasUpdates = true;
@@ -86,18 +72,26 @@
                             }
                             catch (Exception)
                             {
-                                var error = String.Format("Error retrieving #{0}", cardInfo.MultiVerseId);
+                                var error = String.Format("Error retrieving #{0} from {1}", cardInfo.MultiVerseId, cardInfo.AbsoluteUrl);
                                 NonBlockingConsole.WriteLine(error, ConsoleColor.Red);
 
-                                if (card.Log == null)
-                                    card.Log = new CardLog();
+                                var t = Repository.GetLog(cardInfo.MultiVerseId);
+                                t.Wait();
 
-                                if (card.Log.Errors == null)
-                                    card.Log.Errors = new List<string>();
+                                var cardLog = t.Result ?? new CardLog
+                                {
+                                    MultiverseId = cardInfo.MultiVerseId
+                                };
 
-                                card.Log.Errors.Add(error);
+                                if (cardLog.Errors == null)
+                                    cardLog.Errors = new List<string>();
+
+                                cardLog.Errors.Add(error);
+
+                                var t1 = Repository.CreateOrUpdateCardLogAsync(cardLog);
+                                t1.Wait();
+                                continue;
                             }
-                            
 
                             hasUpdates = true;
                         }
@@ -115,7 +109,7 @@
             }
         }
 
-        protected static IEnumerable<CompactCardInfo> GetAllCompactCardInfos(
+        private static IEnumerable<CompactCardInfo> GetAllCompactCardInfos(
             ResourcePool<PhantomJSDriver> driverPool)
         {
             foreach (var cardInfo in GetCompactCardInfos(Color.Black, driverPool))
@@ -134,7 +128,7 @@
                 yield return cardInfo;
         }
 
-        protected static IEnumerable<CompactCardInfo> GetCompactCardInfos(Color color, ResourcePool<PhantomJSDriver> driverPool, int? currentPage = null, int? maxPages = null)
+        private static IEnumerable<CompactCardInfo> GetCompactCardInfos(Color color, ResourcePool<PhantomJSDriver> driverPool, int? currentPage = null, int? maxPages = null)
         {
             var isInitial = currentPage == null;
 
@@ -221,7 +215,7 @@ return result;
                     cardInfo.BaseUri = url;
 
                 foreach (var cardInfo in cardInfos)
-                        yield return cardInfo;
+                    yield return cardInfo;
 
                 if (!isInitial)
                 {
@@ -237,7 +231,7 @@ return result;
             }
         }
 
-        protected static CardDetails GetCardDetails(string metaverseId, ResourcePool<PhantomJSDriver> driverPool)
+        private static CardDetails GetCardDetails(string metaverseId, ResourcePool<PhantomJSDriver> driverPool)
         {
             var uriBuilder =
                 new UriBuilder("http://gatherer.wizards.com/Pages/Card/Details.aspx");
@@ -268,22 +262,76 @@ var cardDetails = {
     text: '',
     flavorText: '',
     set: '',
+    pt: {
+        p: null,
+        t: null
+    },
     rarity: '',
     artist: ''
 };
 
-cardDetails.name = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(0)').text().trim();
-cardDetails.manaCost = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(1) > img').map(function(i, v) { return jQuery(v).attr('alt'); });
-cardDetails.convertedManaCost = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(2)').text().trim();
-cardDetails.types = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(3)').text().trim().split(',');
-cardDetails.text = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(4)').text().trim();
-cardDetails.flavorText = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(5)').text().trim();
-cardDetails.set = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(6)').text().trim();
-cardDetails.rarity = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(7)').text().trim();
-cardDetails.artist = jQuery('tr > td.rightCol > div.smallGreyMono > div.row > div.value:eq(8)').text().trim();
+cardDetails.name = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_nameRow > .value').text().trim();
+cardDetails.manaCost = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_manaRow > .value > img').map(function(i, v) { return jQuery(v).attr('alt'); });
+cardDetails.convertedManaCost = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cmcRow > .value').text().trim();
+if (cardDetails.convertedManaCost != null)
+    cardDetails.convertedManaCost = parseFloat(cardDetails.convertedManaCost);
+
+cardDetails.types = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_typeRow > .value').text().trim().split(',');
+
+cardDetails.text = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow > .value > .cardtextbox').map(function(i, v) { return jQuery(v).html(); });
+if (typeof cardDetails.text == 'object' || typeof cardDetails.text == 'array')
+    cardDetails.text = jQuery.makeArray(cardDetails.text).join('\n');
+
+cardDetails.flavorText = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_flavorRow > .value > .cardtextbox').map(function(i, v) { return jQuery(v).html(); });
+if (typeof cardDetails.flavorText == 'object' || typeof cardDetails.flavorText == 'array')
+    cardDetails.flavorText = jQuery.makeArray(cardDetails.flavorText).join('\n');
+
+cardDetails.set = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_setRow > .value').text().trim();
+cardDetails.rarity = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rarityRow > .value').text().trim();
+cardDetails.cardNumber = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_numberRow > .value').text().trim();
+cardDetails.artist = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_artistRow > .value').text().trim();
+
+cardDetails.imageUrl = jQuery('tr > td.leftCol > div > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cardImage').first().attr('src');
+
+var pt = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow > .value').text().trim().split('/');
+if (pt.length == 2) {
+    cardDetails.pt.p = pt[0].trim();
+    cardDetails.pt.t = pt[1].trim();
+} else if (pt.length == 4) {
+    cardDetails.pt.p = pt[0].trim() + '/' + pt[1].trim();
+    cardDetails.pt.t = pt[2].trim() + '/' + pt[3].trim();
+}
+
+cardDetails.otherSets = jQuery('tr > td.rightCol > div.smallGreyMono > #ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_otherSetsRow > .value > div > a').map(function(i, v) { 
+     var result  = {};
+     result.metaverseId = jQuery(v).attr('href');
+     if (result.metaverseId != '')
+          result.metaverseId = result.metaverseId.substring(result.metaverseId.lastIndexOf('=')+1);
+     result.set = jQuery(v).find('img').attr('alt');
+     return result;
+});
+
+cardDetails.rulings = jQuery('#ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rulingsRow .post').map(function(i, v) { 
+     var result  = {};
+     result.rulingDate = jQuery(v).find('td:eq(0)').text();
+     result.rulingDate = new Date(result.rulingDate).toISOString();
+     result.rulingText = jQuery(v).find('td:eq(1)').text().trim();
+     return result;
+});
+
 return cardDetails;
 ");
+                if (!String.IsNullOrEmpty(cardDetails.Text))
+                    cardDetails.Text = cardDetails.Text.Trim();
+
+                if (!String.IsNullOrEmpty(cardDetails.FlavorText))
+                    cardDetails.FlavorText = cardDetails.FlavorText.Trim();
+
                 cardDetails.OriginalUrl = url.ToString();
+                Uri absImageUrl;
+                if (Uri.TryCreate(url, cardDetails.ImageUrl, out absImageUrl))
+                    cardDetails.ImageUrl = absImageUrl.ToString();
+
                 cardDetails.LastRetrieved = DateTime.UtcNow;
 
                 return cardDetails;

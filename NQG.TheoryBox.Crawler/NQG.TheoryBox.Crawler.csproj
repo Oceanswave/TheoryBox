@@ -74,7 +74,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TheoryBoxCrawler.cs" />
+    <Compile Include="TheoryBoxCrawlerService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -103,7 +103,9 @@
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
+    -->
   <Target Name="AfterBuild">
+    <Copy SourceFiles="HiddenSettings.config" DestinationFiles="HiddenSettings.config" SkipUnchangedFiles="true" Condition="!Exists('HiddenSettings.config')">
+    </Copy>
   </Target>
-  -->
 </Project>

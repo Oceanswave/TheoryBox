@@ -9,21 +9,20 @@
         {
             Get[""] = _ =>
             {
-                var providers = this.interactiveDiagnostics
-                    .AvailableDiagnostics
-                    .Select(
-                        p =>
-                            new
-                            {
-                                p.Name,
-                                p.Description,
-                                Type = p.GetType().Name,
-                                p.GetType().Namespace,
-                                Assembly = p.GetType().Assembly.GetName().Name
-                            })
-                    .ToArray();
+                return Response.AsJson("Hello, world");
+            };
 
-                return Response.AsJson(providers);
+            Get["/metaverseid/{metaverseId}", true] = async (_, token) =>
+            {
+                string id = _.metaverseId;
+                var card = await Repository.GetCard(id);
+                return Response.AsJson(card);
+            };
+
+            Get["/logs/", true] = async (_, token) =>
+            {
+                var card = await Repository.GetAllCardLogs();
+                return Response.AsJson(card);
             };
         }
     }

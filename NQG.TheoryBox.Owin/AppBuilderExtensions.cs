@@ -6,7 +6,7 @@
 
     public static class AppBuilderExtensions
     {
-        public static IAppBuilder UseBaristaLabsWeb(this IAppBuilder app, IKernel kernel)
+        public static IAppBuilder UseTheoryBoxWeb(this IAppBuilder app)
         {
             return app.UseNancy(options => options.PassThroughWhenStatusCodesAre(HttpStatusCode.NotFound,
               HttpStatusCode.InternalServerError));

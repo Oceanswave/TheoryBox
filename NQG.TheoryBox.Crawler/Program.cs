@@ -8,12 +8,7 @@
         {
             HostFactory.Run(x =>
             {
-                x.Service<TheoryBoxCrawler>(s =>
-                {
-                    s.ConstructUsing(name => new TheoryBoxCrawler());
-                    s.WhenStarted(tc => tc.Start());
-                    s.WhenStopped(tc => tc.Stop());
-                });
+                x.Service<TheoryBoxCrawlerService>();
 
                 x.RunAsPrompt();
 
