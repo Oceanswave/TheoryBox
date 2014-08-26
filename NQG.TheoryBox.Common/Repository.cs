@@ -1,67 +1,58 @@
 ﻿namespace NQG.TheoryBox
 {
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.Client;
-    using Microsoft.Azure.Documents.Linq;
     using System;
     using System.Configuration;
-    using System.Linq;
-    using System.Threading.Tasks;
+    using MyCouch;
+    using MyCouch.Cloudant;
+    using MyCouch.EntitySchemes.Reflections;
+    using MyCouch.Net;
+    using NQG.TheoryBox.EntitySchemes;
 
     public static partial class Repository
     {
-        private static readonly object SyncRoot = new object();
-
-        private static Database s_database;
-        private static DocumentClient s_client;
-
-        public static String DatabaseId
+        public static Uri DbUri
         {
             get
             {
-                return ConfigurationManager.AppSettings.Get("TheoryBox_Database");
+                return GetDbUri();
             }
         }
 
-        public static DocumentClient Client
+        public static IMyCouchCloudantClient GetDbClient(string databaseName = null)
         {
-            get
-            {
-                if (s_client == null)
-                {
-                    lock (SyncRoot)
-                    {
-                        if (s_client == null)
-                        {
-                            var endpoint = ConfigurationManager.AppSettings.Get("TheoryBox_EndpointUrl");
-                            var authKey = ConfigurationManager.AppSettings.Get("TheoryBox_AuthorizationKey");
-                            var endpointUri = new Uri(endpoint);
-                            s_client = new DocumentClient(endpointUri, authKey);
-                        }
-                    }
-                }
+            var endpoint = ConfigurationManager.AppSettings.Get("TheoryBox_EndpointUrl");
+            var authKey = ConfigurationManager.AppSettings.Get("TheoryBox_AuthorizationKey");
+            var password = ConfigurationManager.AppSettings.Get("TheoryBox_Password");
 
-                return s_client;
-            }
+            var uriBuilder = new MyCouchUriBuilder(endpoint)
+                .SetBasicCredentials(authKey, password);
+
+            if (databaseName != null)
+                uriBuilder.SetDbName(databaseName);
+
+            var uri = uriBuilder.Build();
+            var bs = new MyCouchCloudantClientBootstrapper
+            {
+                EntityReflectorFn = () => new JsonNetEntityReflector(new IlDynamicPropertyFactory()),
+            };
+
+            var client = new MyCouchCloudantClient(new DbClientConnection(uri), bs);
+            return client;
         }
 
-        public static async Task<Database> ReadOrCreateGathererDatabaseAsync()
+        public static Uri GetDbUri(string databaseName = null)
         {
-            if (s_database != null)
-                return s_database;
+            var endpoint = ConfigurationManager.AppSettings.Get("TheoryBox_EndpointUrl");
+            var authKey = ConfigurationManager.AppSettings.Get("TheoryBox_AuthorizationKey");
+            var password = ConfigurationManager.AppSettings.Get("TheoryBox_Password");
 
-            s_database = Client
-                .CreateDatabaseQuery()
-                .ToArray()
-                .FirstOrDefault(db => db.Id == DatabaseId);
+            var uriBuilder = new MyCouchUriBuilder(endpoint)
+                .SetBasicCredentials(authKey, password);
 
-            if (s_database == null)
-            {
-                var database = new Database { Id = DatabaseId };
-                s_database = await Client.CreateDatabaseAsync(database);
-            }
+            if (databaseName != null)
+                uriBuilder.SetDbName(databaseName);
 
-            return s_database;
+            return uriBuilder.Build();
         }
     }
 }

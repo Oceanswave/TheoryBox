@@ -1,93 +1,61 @@
 ﻿namespace NQG.TheoryBox
 {
-    using System;
+    using MyCouch;
+    using MyCouch.Requests;
+    using NQG.TheoryBox.DomainModel;
+    using System.Collections.Generic;
     using System.Configuration;
     using System.Linq;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.Linq;
-    using NQG.TheoryBox.DomainModel;
 
     public partial class Repository
     {
-        private static DocumentCollection s_logsCollection;
-
-        public static String LogsCollectionId
+        public static string LogsDatabaseName
         {
             get
             {
-                return ConfigurationManager.AppSettings.Get("TheoryBox_LogsCollection");
+                return ConfigurationManager.AppSettings.Get("TheoryBox_Database_Logs");
             }
         }
 
-        public static async Task<DocumentCollection> ReadOrCreateLogsCollectionAsync()
+        public static async Task<bool> LogExistsAsync(string multiverseId)
         {
-            var database = await ReadOrCreateGathererDatabaseAsync();
-
-            if (s_logsCollection != null)
-                return s_logsCollection;
-
-            if (s_logsCollection == null)
+            using (var store = new MyCouchStore(GetDbClient(LogsDatabaseName)))
             {
-                s_logsCollection = Client.CreateDocumentCollectionQuery(database.SelfLink)
-                    .ToArray()
-                    .FirstOrDefault(col => col.Id == CardCollectionId);
+                var existingCardResponse =
+                    await store.ExistsAsync(multiverseId);
 
-                // ReSharper disable once ConvertIfStatementToNullCoalescingExpression
-                if (s_logsCollection == null)
-                {
-                    s_logsCollection = await Client.CreateDocumentCollectionAsync(database.SelfLink,
-                        new DocumentCollection { Id = LogsCollectionId });
-                }
+                return existingCardResponse;
             }
-
-            return s_logsCollection;
         }
 
         public static async Task<CardLog> GetLog(string multiverseId)
         {
-            var collection = await ReadOrCreateLogsCollectionAsync();
-
-            var existingLog =
-                Client.CreateDocumentQuery<CardLog>(collection.SelfLink)
-                    .Where(c => c.MultiverseId == multiverseId)
-                    .ToArray()
-                    .FirstOrDefault();
-
-            return existingLog;
+            using (var store = new MyCouchStore(GetDbClient(LogsDatabaseName)))
+            {
+                return await store.GetByIdAsync<CardLog>(multiverseId);
+            }
         }
 
-        public static async Task<IOrderedQueryable<CardLog>> GetAllCardLogs()
+        public static async Task<IList<CardLog>> GetAllCardLogs()
         {
-            var collection = await ReadOrCreateLogsCollectionAsync();
+            using (var client = GetDbClient(LogsDatabaseName))
+            {
+                var query2 = new QueryViewRequest(SystemViewIdentity.AllDocs);
 
-            var logs =
-                Client.CreateDocumentQuery<CardLog>(collection.SelfLink);
-
-            return logs;
+                var qi = await client.Views.QueryAsync<CardLog>(query2);
+                var result = qi.Rows.OrderBy(r => r.Id).Select(r => r.Value).ToList();
+                return result;
+            }
         }
 
         public static async Task<CardLog> CreateOrUpdateCardLogAsync(CardLog cardLog)
         {
-            var collection = await ReadOrCreateLogsCollectionAsync();
-
-            var existingLog =
-                Client.CreateDocumentQuery(collection.SelfLink)
-                    .Where(c => c.Id == cardLog.MultiverseId)
-                    .ToArray()
-                    .FirstOrDefault();
-
-            if (existingLog == null)
+            using (var store = new MyCouchStore(GetDbClient(LogsDatabaseName)))
             {
-                await Client.CreateDocumentAsync(collection.SelfLink, cardLog);
+                var setResponse = await store.SetAsync(cardLog);
+                return setResponse;
             }
-            else
-            {
-                await Client.ReplaceDocumentAsync(existingLog.SelfLink, cardLog);
-            }
-
-            return cardLog;
         }
-
     }
 }

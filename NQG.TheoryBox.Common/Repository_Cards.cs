@@ -1,98 +1,62 @@
 ﻿namespace NQG.TheoryBox
 {
-    using System;
+    using MyCouch;
+    using MyCouch.Requests;
+    using NQG.TheoryBox.DomainModel;
+    using System.Collections.Generic;
     using System.Configuration;
     using System.Linq;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.Documents.Linq;
-    using NQG.TheoryBox.DomainModel;
 
     public partial class Repository
     {
-        private static DocumentCollection s_cardCollection;
-
-        public static string CardCollectionId
+        public static string CardsDatabaseName
         {
             get
             {
-                return ConfigurationManager.AppSettings.Get("TheoryBox_CardCollection");
+                return ConfigurationManager.AppSettings.Get("TheoryBox_Database_Cards");
             }
         }
 
-        public static async Task<DocumentCollection> ReadOrCreateCardCollectionAsync()
+        public static async Task<bool> CardExistsAsync(string multiverseId)
         {
-            var database = await ReadOrCreateGathererDatabaseAsync();
-
-            if (s_cardCollection != null)
-                return s_cardCollection;
-
-            if (s_cardCollection == null)
+            using (var store = new MyCouchStore(GetDbClient(CardsDatabaseName)))
             {
-                s_cardCollection = Client.CreateDocumentCollectionQuery(database.SelfLink)
-                    .ToArray()
-                    .FirstOrDefault(col => col.Id == CardCollectionId);
+                var existingCardResponse =
+                    await store.ExistsAsync(multiverseId);
 
-                // ReSharper disable once ConvertIfStatementToNullCoalescingExpression
-                if (s_cardCollection == null)
-                {
-                    s_cardCollection = await Client.CreateDocumentCollectionAsync(database.SelfLink,
-                        new DocumentCollection { Id = CardCollectionId });
-                }
+                return existingCardResponse;
             }
-
-            return s_cardCollection;
+            
         }
 
-        public static async Task DeleteCardCollectionAsync()
+        public static async Task<Card> GetCardAsync(string multiverseId)
         {
-            var collection = await ReadOrCreateCardCollectionAsync();
-            await Client.DeleteDocumentCollectionAsync(collection.SelfLink);
+            using (var store = new MyCouchStore(GetDbClient(CardsDatabaseName)))
+            {
+                return await store.GetByIdAsync<Card>(multiverseId);
+            }
         }
 
-        public static async Task<Card> GetCard(string multiverseId)
+        public static async Task<IList<Card>> GetAllCardsAsync()
         {
-            var collection = await ReadOrCreateCardCollectionAsync();
+            using (var client = GetDbClient(CardsDatabaseName))
+            {
+                var query2 = new QueryViewRequest(SystemViewIdentity.AllDocs);
 
-            var existingCard =
-                Client.CreateDocumentQuery<Card>(collection.SelfLink)
-                    .Where(c => c.MultiverseId == multiverseId)
-                    .ToArray()
-                    .FirstOrDefault();
-
-            return existingCard;
-        }
-
-        public static async Task<IOrderedQueryable<Card>> GetAllCards()
-        {
-            var collection = await ReadOrCreateCardCollectionAsync();
-
-            var existingCards =
-                Client.CreateDocumentQuery<Card>(collection.SelfLink);
-
-            return existingCards;
+                var qi = await client.Views.QueryAsync<Card>(query2);
+                var result = qi.Rows.OrderBy(r => r.Value.Details.Name).Select(r => r.Value).ToList();
+                return result;
+            }
         }
 
         public static async Task<Card> CreateOrUpdateCardAsync(Card card)
         {
-            var collection = await ReadOrCreateCardCollectionAsync();
-
-            var existingCard =
-                Client.CreateDocumentQuery(collection.SelfLink)
-                    .Where(c => c.Id == card.MultiverseId)
-                    .ToArray()
-                    .FirstOrDefault();
-
-            if (existingCard == null)
+            using (var store = new MyCouchStore(GetDbClient(CardsDatabaseName)))
             {
-                await Client.CreateDocumentAsync(collection.SelfLink, card);
+                var setResponse = await store.SetAsync(card);
+                return setResponse;
             }
-            else
-            {
-                await Client.ReplaceDocumentAsync(existingCard.SelfLink, card);
-            }
-
-            return card;
         }
     }
 }

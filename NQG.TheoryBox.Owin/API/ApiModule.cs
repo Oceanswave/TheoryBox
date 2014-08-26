@@ -15,7 +15,8 @@
             Get["/metaverseid/{metaverseId}", true] = async (_, token) =>
             {
                 string id = _.metaverseId;
-                var card = await Repository.GetCard(id);
+                var card = await Repository.GetCardAsync(id);
+               
                 return Response.AsJson(card);
             };
 

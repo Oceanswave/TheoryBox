@@ -12,7 +12,7 @@
             Discussion = new CardDiscussion();
         }
 
-        [JsonProperty("id")]
+        [JsonProperty("_id")]
         public string MultiverseId
         {
             get;

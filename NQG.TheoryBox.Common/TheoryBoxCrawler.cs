@@ -46,7 +46,7 @@
                     foreach (var cardInfo in cardInfos)
                     {
                         var hasUpdates = false;
-                        var card = await Repository.GetCard(cardInfo.MultiVerseId);
+                        var card = await Repository.GetCardAsync(cardInfo.MultiVerseId);
 
                         if (card == null)
                         {
