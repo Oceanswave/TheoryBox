@@ -14,7 +14,6 @@
         {
             m_workerThread = new Thread(() =>
             {
-                AsyncPump.Run(() => m_crawler.Initialize());
                 AsyncPump.Run(() => m_crawler.Crawl());
             });
         }

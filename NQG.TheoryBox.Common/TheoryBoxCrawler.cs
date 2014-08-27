@@ -13,15 +13,10 @@
     {
         public string UserAgent
         {
-            get;
-            set;
-        }
-
-        public async void Initialize()
-        {
-            UserAgent = ConfigurationManager.AppSettings["UserAgent"];
-
-            //await Repository.DeleteCardCollectionAsync();
+            get
+            {
+                return ConfigurationManager.AppSettings["UserAgent"];
+            }
         }
 
         public async void Crawl()
@@ -112,23 +107,26 @@
         private static IEnumerable<CompactCardInfo> GetAllCompactCardInfos(
             ResourcePool<PhantomJSDriver> driverPool)
         {
-            foreach (var cardInfo in GetCompactCardInfos(Color.Black, driverPool))
+            foreach (var cardInfo in GetCompactCardInfos(null, SearchByTypes.Land, driverPool))
                 yield return cardInfo;
 
-            foreach (var cardInfo in GetCompactCardInfos(Color.Blue, driverPool))
+            foreach (var cardInfo in GetCompactCardInfos(SearchByColor.Black, null, driverPool))
                 yield return cardInfo;
 
-            foreach (var cardInfo in GetCompactCardInfos(Color.Green, driverPool))
+            foreach (var cardInfo in GetCompactCardInfos(SearchByColor.Blue, null, driverPool))
                 yield return cardInfo;
 
-            foreach (var cardInfo in GetCompactCardInfos(Color.Red, driverPool))
+            foreach (var cardInfo in GetCompactCardInfos(SearchByColor.Green, null, driverPool))
                 yield return cardInfo;
 
-            foreach (var cardInfo in GetCompactCardInfos(Color.White, driverPool))
+            foreach (var cardInfo in GetCompactCardInfos(SearchByColor.Red, null, driverPool))
+                yield return cardInfo;
+
+            foreach (var cardInfo in GetCompactCardInfos(SearchByColor.White, null, driverPool))
                 yield return cardInfo;
         }
 
-        private static IEnumerable<CompactCardInfo> GetCompactCardInfos(Color color, ResourcePool<PhantomJSDriver> driverPool, int? currentPage = null, int? maxPages = null)
+        private static IEnumerable<CompactCardInfo> GetCompactCardInfos(SearchByColor? searchByColor, SearchByTypes? searchByTypes, ResourcePool<PhantomJSDriver> driverPool, int? currentPage = null, int? maxPages = null)
         {
             var isInitial = currentPage == null;
 
@@ -144,25 +142,40 @@
                 {"page", currentPage.Value.ToString(CultureInfo.InvariantCulture)}
             };
 
-            switch (color)
+            if (searchByColor.HasValue)
             {
-                case Color.Black:
-                    queryString.Add("color", "|[B]");
-                    break;
-                case Color.Blue:
-                    queryString.Add("color", "|[U]");
-                    break;
-                case Color.Green:
-                    queryString.Add("color", "|[G]");
-                    break;
-                case Color.Red:
-                    queryString.Add("color", "|[R]");
-                    break;
-                case Color.White:
-                    queryString.Add("color", "|[W]");
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException("Unknown or Unsupported card color: " + color);
+                switch (searchByColor.Value)
+                {
+                    case SearchByColor.Black:
+                        queryString.Add("color", "|[B]");
+                        break;
+                    case SearchByColor.Blue:
+                        queryString.Add("color", "|[U]");
+                        break;
+                    case SearchByColor.Green:
+                        queryString.Add("color", "|[G]");
+                        break;
+                    case SearchByColor.Red:
+                        queryString.Add("color", "|[R]");
+                        break;
+                    case SearchByColor.White:
+                        queryString.Add("color", "|[W]");
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException("Unknown or Unsupported card color: " + searchByColor.Value);
+                }
+            }
+
+            if (searchByTypes.HasValue)
+            {
+                var typeValue = "";
+                foreach (var value in Enum.GetValues(typeof (SearchByTypes)))
+                {
+                    if (searchByTypes.Value.IsSet((SearchByTypes) value))
+                        typeValue += String.Format("+[{0}]", value);
+                }
+
+                queryString.Add("type", typeValue);
             }
 
             uriBuilder.Query = queryString.ToQueryString(false);
@@ -224,7 +237,7 @@ return result;
 
                 for (var i = 1; i < maxPages + 1; i++)
                 {
-                    var pageCardInfos = GetCompactCardInfos(color, driverPool, i, maxPages);
+                    var pageCardInfos = GetCompactCardInfos(searchByColor, searchByTypes, driverPool, i, maxPages);
                     foreach (var cardInfo in pageCardInfos)
                         yield return cardInfo;
                 }

@@ -1,6 +1,6 @@
 ﻿namespace NQG.TheoryBox.DomainModel
 {
-    public enum Color
+    public enum SearchByColor
     {
         White,
         Blue,
